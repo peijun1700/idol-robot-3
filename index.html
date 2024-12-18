@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="css/style.css">
+    <title>語音助理</title>
+    <script src="https://unpkg.com/wavesurfer.js@6.6.3/dist/wavesurfer.min.js"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body>
+    <div class="container">
+        <div class="chat-container">
+            <h1 class="bot-name" id="botName">語音助理</h1>
+            <button id="editNameBtn" class="edit-name-btn">
+                <i class="fas fa-edit"></i>
+            </button>
+            
+            <div id="nameEditModal" class="modal">
+                <div class="modal-content">
+                    <h2>設定機器人名字</h2>
+                    <input type="text" id="botNameInput" placeholder="請輸入機器人名字">
+                    <div class="modal-buttons">
+                        <button id="saveNameBtn" class="action-btn primary">儲存</button>
+                        <button id="cancelNameBtn" class="action-btn secondary">取消</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="avatar-container">
+                <div class="avatar" id="avatarContainer">
+                    <img src="assets/default-avatar.png" alt="助理頭像" id="botAvatar">
+                    <div class="avatar-overlay">
+                        <i class="fas fa-camera"></i>
+                        <span>點擊更換頭像</span>
+                    </div>
+                    <input type="file" id="avatarInput" accept="image/*" style="display: none;">
+                    <div class="wave-animation">
+                        <div class="wave"></div>
+                        <div class="wave"></div>
+                        <div class="wave"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="waveform" class="waveform-container"></div>
+
+            <div class="controls">
+                <button id="startButton" class="action-btn primary">
+                    <i class="fas fa-microphone"></i> 開始聆聽
+                </button>
+                <button id="stopButton" class="action-btn secondary">
+                    <i class="fas fa-stop"></i> 停止聆聽
+                </button>
+            </div>
+
+            <div class="command-section">
+                <h2>新增語音指令</h2>
+                <div class="command-input">
+                    <input type="text" id="commandText" placeholder="輸入觸發指令" class="command-text">
+                    <input type="file" id="uploadAudio" accept="audio/*" class="file-input">
+                    <label for="uploadAudio" class="upload-label">
+                        <i class="fas fa-upload"></i> 選擇音檔
+                    </label>
+                    <button id="addCommand" class="action-btn upload">
+                        <i class="fas fa-plus"></i> 新增指令
+                    </button>
+                </div>
+
+                <div class="command-list">
+                    <h2>可用指令列表</h2>
+                    <div class="command-items" id="commandList">
+                        <!-- 指令項目會動態添加在這裡 -->
+                    </div>
+                </div>
+            </div>
+
+            <div class="customization-section">
+                <h2>個人化設定</h2>
+                <div class="customization-controls">
+                    <div class="avatar-upload">
+                        <label for="uploadAvatar" class="upload-label">
+                            <i class="fas fa-image"></i> 更換頭像
+                        </label>
+                        <input type="file" id="uploadAvatar" accept="image/*" class="file-input">
+                    </div>
+
+                    <div class="theme-controls">
+                        <select id="themeSelector" class="theme-select">
+                            <option value="default">預設主題</option>
+                            <option value="dark">深色主題</option>
+                            <option value="warm">暖色主題</option>
+                        </select>
+                        
+                        <div class="color-picker">
+                            <label for="customColorPicker">自訂顏色：</label>
+                            <input type="color" id="customColorPicker">
+                        </div>
+
+                        <div class="background-upload">
+                            <label for="uploadBackground" class="upload-label">
+                                <i class="fas fa-image"></i> 更換背景
+                            </label>
+                            <input type="file" id="uploadBackground" accept="image/*" class="file-input">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/audio-processor.js"></script>
+    <script src="js/main.js"></script>
+</body>
+</html>

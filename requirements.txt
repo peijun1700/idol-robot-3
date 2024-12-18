@@ -1,0 +1,20 @@
+flask==3.0.0
+SpeechRecognition==3.10.0
+pygame==2.5.2
+Pillow==10.1.0
+python-dotenv==1.0.0
+websockets==12.0
+numpy>=2.0.0
+gunicorn==21.2.0
+# 新增的優化套件
+flask-caching==2.1.0
+flask-compress==1.14
+pydub==0.25.1
+soundfile==0.12.1
+librosa==0.10.1
+numba==0.58.1
+# 安全性相關
+flask-talisman==1.1.0
+flask-cors==4.0.0
+# 效能監控
+prometheus-flask-exporter==0.23.0
