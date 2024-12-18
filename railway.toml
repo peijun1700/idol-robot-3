@@ -1,8 +1,10 @@
 [build]
-builder = "NIXPACKS"
+builder = "nixpacks"
+buildCommand = "pip install -r requirements.txt"
 
 [deploy]
 startCommand = "gunicorn main:app"
 healthcheckPath = "/"
 healthcheckTimeout = 100
-restartPolicyType = "ON_FAILURE"
+restartPolicyType = "on-failure"
+restartPolicyMaxRetries = 10
