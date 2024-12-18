@@ -18,7 +18,7 @@ import logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-app = Flask(__name__)
+app = Flask(__name__, static_folder='static')
 
 # 安全性設置
 Talisman(app, content_security_policy=None)
@@ -29,10 +29,12 @@ cache = Cache(app, config={'CACHE_TYPE': 'simple'})
 Compress(app)
 
 # 創建必要的目錄
-UPLOAD_FOLDER = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'uploads')
-AVATAR_FOLDER = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'avatars')
-os.makedirs(UPLOAD_FOLDER, exist_ok=True)
-os.makedirs(AVATAR_FOLDER, exist_ok=True)
+UPLOAD_FOLDER = os.path.join(app.root_path, 'uploads')
+AVATAR_FOLDER = os.path.join(app.root_path, 'avatars')
+STATIC_FOLDER = os.path.join(app.root_path, 'static')
+
+for folder in [UPLOAD_FOLDER, AVATAR_FOLDER, STATIC_FOLDER]:
+    os.makedirs(folder, exist_ok=True)
 
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 app.config['AVATAR_FOLDER'] = AVATAR_FOLDER
@@ -98,7 +100,26 @@ def index():
 
 @app.route('/health')
 def health():
-    return jsonify({'status': 'healthy'}), 200
+    try:
+        # 檢查必要目錄是否存在且可寫
+        for folder in [UPLOAD_FOLDER, AVATAR_FOLDER, STATIC_FOLDER]:
+            if not os.path.exists(folder):
+                return jsonify({'status': 'unhealthy', 'error': f'Directory {folder} does not exist'}), 500
+            if not os.access(folder, os.W_OK):
+                return jsonify({'status': 'unhealthy', 'error': f'Directory {folder} is not writable'}), 500
+                
+        # 檢查是否可以創建測試文件
+        test_file = os.path.join(UPLOAD_FOLDER, 'test.txt')
+        try:
+            with open(test_file, 'w') as f:
+                f.write('test')
+            os.remove(test_file)
+        except Exception as e:
+            return jsonify({'status': 'unhealthy', 'error': f'Cannot write test file: {str(e)}'}), 500
+            
+        return jsonify({'status': 'healthy'}), 200
+    except Exception as e:
+        return jsonify({'status': 'unhealthy', 'error': str(e)}), 500
 
 @app.route('/upload-avatar', methods=['POST'])
 def upload_avatar():
@@ -161,9 +182,18 @@ def uploaded_file(filename):
 def uploaded_avatar(filename):
     return send_from_directory(app.config['AVATAR_FOLDER'], filename)
 
-@app.route('/<path:path>')
-def serve_file(path):
-    return send_from_directory('.', path)
+@app.route('/css/<path:filename>')
+def serve_css(filename):
+    return send_from_directory('css', filename)
+
+@app.route('/js/<path:filename>')
+def serve_js(filename):
+    return send_from_directory('js', filename)
+
+@app.route('/images/<path:filename>')
+def serve_images(filename):
+    return send_from_directory('images', filename)
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 5000)), debug=False)
+    port = int(os.environ.get('PORT', 5000))
+    app.run(host='0.0.0.0', port=port)
