@@ -3,7 +3,6 @@ from flask_caching import Cache
 from flask_compress import Compress
 from flask_talisman import Talisman
 from flask_cors import CORS
-from prometheus_flask_exporter import PrometheusMetrics
 import os
 import json
 from pathlib import Path
@@ -31,20 +30,22 @@ CORS(app)
 # 效能優化
 cache = Cache(app, config={'CACHE_TYPE': 'simple'})
 Compress(app)
-metrics = PrometheusMetrics(app)
 
-# 監控端點
-metrics.info('app_info', 'Application info', version='1.0.0')
-
-UPLOAD_FOLDER = 'uploads'
-ALLOWED_AUDIO_EXTENSIONS = {'mp3', 'wav', 'ogg', 'aac', 'm4a', 'flac', 'wma'}
-ALLOWED_IMAGE_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'webp'}
-
-if not os.path.exists(UPLOAD_FOLDER):
-    os.makedirs(UPLOAD_FOLDER)
+# 創建必要的目錄
+UPLOAD_FOLDER = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'uploads')
+AVATAR_FOLDER = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'avatars')
+os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+os.makedirs(AVATAR_FOLDER, exist_ok=True)
 
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+app.config['AVATAR_FOLDER'] = AVATAR_FOLDER
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max-limit
+
+# 監控端點
+# metrics.info('app_info', 'Application info', version='1.0.0')
+
+ALLOWED_AUDIO_EXTENSIONS = {'mp3', 'wav', 'ogg', 'aac', 'm4a', 'flac', 'wma'}
+ALLOWED_IMAGE_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'webp'}
 
 def allowed_audio_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_AUDIO_EXTENSIONS
@@ -124,9 +125,9 @@ def upload_avatar():
         return jsonify({'error': 'No selected file'}), 400
     if file and allowed_image_file(file.filename):
         filename = secure_filename(file.filename)
-        file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+        file_path = os.path.join(app.config['AVATAR_FOLDER'], filename)
         file.save(file_path)
-        return jsonify({'success': True, 'path': f'/uploads/{filename}'})
+        return jsonify({'success': True, 'path': f'/avatars/{filename}'})
     return jsonify({'error': 'Invalid file type'}), 400
 
 @app.route('/upload-audio', methods=['POST'])
@@ -175,10 +176,19 @@ def upload_audio():
 def uploaded_file(filename):
     return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
 
+@app.route('/avatars/<path:filename>')
+def uploaded_avatar(filename):
+    return send_from_directory(app.config['AVATAR_FOLDER'], filename)
+
 @app.route('/<path:path>')
 def serve_file(path):
     return send_from_directory('.', path)
 
 if __name__ == '__main__':
-    port = int(os.environ.get('PORT', 5000))
-    app.run(host='0.0.0.0', port=port)
+    # 在開發環境中運行
+    app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 5000)), debug=False)
+else:
+    # 在生產環境中運行
+    gunicorn_logger = logging.getLogger('gunicorn.error')
+    app.logger.handlers = gunicorn_logger.handlers
+    app.logger.setLevel(gunicorn_logger.level)
