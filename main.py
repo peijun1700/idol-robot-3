@@ -18,7 +18,7 @@ import logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-app = Flask(__name__, static_folder='.')
+app = Flask(__name__)
 
 # 安全性設置
 Talisman(app, content_security_policy=None)
@@ -46,6 +46,51 @@ def allowed_audio_file(filename):
 
 def allowed_image_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_IMAGE_EXTENSIONS
+
+class VoiceAssistant:
+    def __init__(self):
+        self.recognizer = sr.Recognizer()
+        self.commands = {}
+        
+        # 優化語音識別設置
+        self.recognizer.energy_threshold = 4000
+        self.recognizer.dynamic_energy_threshold = True
+        self.recognizer.dynamic_energy_adjustment_damping = 0.15
+        self.recognizer.dynamic_energy_ratio = 1.5
+        self.recognizer.pause_threshold = 0.8
+        
+    def process_audio(self, audio_file):
+        """處理音頻文件，進行優化和正規化"""
+        try:
+            # 讀取音頻文件
+            data, samplerate = sf.read(audio_file)
+            
+            # 正規化音頻
+            normalized_data = data / np.max(np.abs(data))
+            
+            # 保存處理後的音頻
+            processed_path = audio_file.replace('.', '_processed.')
+            sf.write(processed_path, normalized_data, samplerate)
+            
+            return processed_path
+        except Exception as e:
+            logger.error(f"音頻處理錯誤: {str(e)}")
+            return audio_file
+
+    @cache.memoize(timeout=300)
+    def get_commands(self):
+        """獲取指令列表（帶緩存）"""
+        return self.commands
+
+    def add_command(self, command_text, audio_path):
+        """添加新指令"""
+        try:
+            processed_audio = self.process_audio(audio_path)
+            self.commands[command_text] = processed_audio
+            return True
+        except Exception as e:
+            logger.error(f"添加指令錯誤: {str(e)}")
+            return False
 
 @app.route('/')
 def index():
@@ -81,19 +126,31 @@ def upload_audio():
             
         if file and allowed_audio_file(file.filename):
             filename = secure_filename(file.filename)
+            timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+            filename = f"{timestamp}_{filename}"
             file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
             file.save(file_path)
             
-            return jsonify({
-                'success': True,
-                'filename': filename,
-                'path': f'/uploads/{filename}'
-            })
-            
+            # 處理音頻
+            try:
+                assistant = VoiceAssistant()
+                processed_path = assistant.process_audio(file_path)
+                return jsonify({
+                    'success': True,
+                    'path': f'/uploads/{os.path.basename(processed_path)}',
+                    'original_path': f'/uploads/{filename}'
+                })
+            except Exception as e:
+                logger.error(f"音頻處理錯誤: {str(e)}")
+                return jsonify({
+                    'success': True,
+                    'path': f'/uploads/{filename}'
+                })
+                
         return jsonify({'error': 'Invalid file type'}), 400
         
     except Exception as e:
-        logger.error(f"Error in upload_audio: {str(e)}")
+        logger.error(f"上傳錯誤: {str(e)}")
         return jsonify({'error': str(e)}), 500
 
 @app.route('/uploads/<filename>')

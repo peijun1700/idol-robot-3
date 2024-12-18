@@ -2,9 +2,28 @@
 <html>
 <head>
     <title>Voice Assistant</title>
+    <link rel="stylesheet" href="/css/style.css">
 </head>
 <body>
-    <h1>Voice Assistant</h1>
-    <p>Server is running!</p>
+    <div class="container">
+        <div class="avatar-section">
+            <img id="avatar" src="/images/default-avatar.png" alt="Assistant Avatar" onclick="document.getElementById('avatar-upload').click()">
+            <input type="file" id="avatar-upload" accept="image/*" style="display: none">
+        </div>
+
+        <div class="controls">
+            <div class="upload-section">
+                <input type="file" id="audio-upload" accept=".mp3,.wav,.ogg,.aac,.m4a,.flac,.wma" style="display: none">
+                <button onclick="document.getElementById('audio-upload').click()">Upload Audio</button>
+            </div>
+            
+            <div id="status" class="status"></div>
+        </div>
+
+        <div id="response" class="response"></div>
+    </div>
+
+    <script src="/js/audio-processor.js"></script>
+    <script src="/js/main.js"></script>
 </body>
 </html>
