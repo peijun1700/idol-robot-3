@@ -3,7 +3,7 @@ builder = "NIXPACKS"
 buildCommand = "pip install -r requirements.txt"
 
 [deploy]
-startCommand = "gunicorn test_app:app --bind=0.0.0.0:$PORT --log-file=- --log-level debug --timeout 120 --workers 4"
+startCommand = "gunicorn main:app --bind=0.0.0.0:$PORT --log-file=- --log-level debug --timeout 120 --workers 4"
 healthcheckPath = "/health"
 healthcheckTimeout = 300
 restartPolicyType = "ON_FAILURE"
